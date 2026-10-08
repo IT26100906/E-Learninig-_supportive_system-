@@ -343,7 +343,7 @@
     //  Error msg display next render this
     function fail(m) { v.err = m; render(); }
 
-    // 👇 Sign Up (data search and creat new account)
+    //  Sign Up (data search and creat new account)
     function doSignup() {
         const n = $('nm').value.trim(), e = $('em').value.trim(), p = $('pw').value;
         v.f = { n, e, p };
@@ -356,7 +356,7 @@
         save(); v.err = ''; v.f = { n: '', e: '', p: '' }; v.p = 'success'; render();
     }
 
-    // 👇 Sign In — email/password valid/unvalid and login
+    //  Sign In — email/password valid/unvalid and login
     function doSignin() {
         const e = $('em').value.trim(), p = $('pw').value;
         v.f = { n: '', e, p };
@@ -374,7 +374,7 @@
         save(); v.err = ''; v.p = 'success'; render();
     }
 
-    // 👇 Logout — user null  landing
+    //  Logout — user null  landing
     function logout() { S.user = null; v.p = 'landing'; save(); render(); window.scrollTo({ top: 0 }); }
 
     //  START
