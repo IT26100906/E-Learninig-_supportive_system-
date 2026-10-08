@@ -79,7 +79,7 @@ main {
     padding: 24px 16px;
 }
 
-/* 👇 උපකාරක classes */
+/* help class */
 .mut { color: var(--mut); }
 .center { text-align: center; }
 .w100 { width: 100%; }
