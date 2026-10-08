@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <!-- correct sinhala word format-->
+
+    <meta charset="utf-8">
+
+    <!-- phone ,tablet viwe thise-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+
+    <title>LearnHub – E-Learning Support System</title>
+
+    <!-- connet css file-->
+    <link rel="stylesheet" href="main.css">
+
+</head>
+
+<body>
+<!--web site add javascript-->
+<div id="root"></div>
+
+<script>
+
+
+
+    //landing page card
+    const BASE = [
+        {
+            id: 'web', icon: '🌐', cat: 'Technology', title: 'Web Development Basics',
+            desc: 'HTML, CSS & JavaScript starter course.',
+            lessons: [1, 2, 3],
+            quiz: [1, 2, 3]
+        },
+        {
+            id: 'math', icon: '➗', cat: 'Science', title: 'Mathematics Essentials',
+            desc: 'Algebra, percentages and geometry.',
+            lessons: [1, 2, 3],
+            quiz: [1, 2, 3]
+        },
+        {
+            id: 'eng', icon: '📝', cat: 'Language', title: 'English Communication',
+            desc: 'Grammar and writing skills.',
+            lessons: [1, 2, 3],
+            quiz: [1, 2, 3]
+        }
+    ];
+
+    // all memory(brain the user dtail)
+    let S = {
+        user: null,     // now log people
+        users: []       // all sing up people
+    };
+
+    // old memory given
+    try { Object.assign(S, JSON.parse(localStorage.getItem('lh2') || '{}')); } catch (e) {}
+    if (!Array.isArray(S.users)) S.users = [];
+
+    //just now screen
+    let v = {
+        p: 'landing',       //what is the page
+        authMode: 'signin', //sing in sing up
+        err: '',            // error
+        f: { n: '', e: '', p: '' }  // form dtail
+    };
+    let role = 'student';   // sing up stu or teacher
+
+
+    // write data browser
+    const save = () => { try { localStorage.setItem('lh2', JSON.stringify(S)); } catch (e) {} };
+
+    // ('id') = document.getElementById('id')
+    const $ = id => document.getElementById(id);
+
+    // protection
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // back
+    function go(p) { v.p = p; v.err = ''; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    //  Auth page
+    function openAuth(m) { v.p = 'auth'; v.authMode = m; v.err = ''; render(); window.scrollTo({ top: 0 }); }
+
+    // firdt page
+    function openLanding() { v.p = 'landing'; v.err = ''; render(); window.scrollTo({ top: 0 }); }
+
+    //  ID  smooth scroll
+    function jump(id) { const el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+    //  Dark / Light theme change
+    function tt() {
+        const r = document.documentElement;
+        r.dataset.theme = (r.dataset.theme === 'dark' || (!r.dataset.theme && matchMedia('(prefers-color-scheme:dark)').matches)) ? 'light' : 'dark';
+    }
+
+    // hart
+    // this main function
+    function render() {
+        const r = $('root');
+
+        // not loging Login  landing හor auth page
+        if (!S.user) {
+            if (v.p !== 'auth' && v.p !== 'landing') v.p = 'landing';
+            r.innerHTML = v.p === 'auth' ? authPage() : landingPage();
+            return;
+        }
+
+        // loging = success msg
+        r.innerHTML = successPage();
+    }
+
+    // landing
+    // first page — Hero, Features, Courses, How it works, FAQ, Footer
+    function landingPage() {
+        const cs = BASE;
+
+        // special 8
+        const feats = [
+            ['📖', 'Structured lessons', 'Bite-sized lessons with clear explanations and real examples.'],
+            ['❓', 'Instant quizzes', 'Timed quizzes with instant scoring and feedback.'],
+            ['📋', 'Assignments', 'Submit written work and get graded by your teacher.'],
+            ['💬', 'Discussions', 'Ask questions and share tips with the community.'],
+            ['📒', 'Personal notes', 'Jot notes for every course — saved automatically.'],
+            ['🏅', 'Certificates', 'Finish a course with 67%+ and print your certificate.'],
+            ['🎮', 'XP, badges & streaks', 'Stay motivated with levels, badges and daily streaks.'],
+            ['🧑‍🏫', 'Teacher panel', 'Create courses, post announcements and grade work.']
+        ];
+
+        // ask quection
+        const faqs = [
+            ['Is LearnHub free?', 'Yes — every course, quiz and certificate is completely free.'],
+            ['Do I need to install anything?', 'No. LearnHub runs in your browser and saves your progress locally on this device.'],
+            ['How do I earn a certificate?', 'Complete all lessons in a course and score 67% or more on its quiz.'],
+            ['Can teachers create courses?', 'Yes. Sign up as a teacher to publish courses, post announcements and grade submissions.']
+        ];
+
+        return `
+  <header class="topbar">
+    <div class="logo" onclick="openLanding()">🎓 LearnHub</div>
+    <nav class="pnav">
+      <a onclick="jump('features')">Features</a>
+      <a onclick="jump('courses')">Courses</a>
+      <a onclick="jump('how')">How it works</a>
+      <a onclick="jump('faq')">FAQ</a>
+    </nav>
+    <div class="pnav-r">
+      <button class="icon" onclick="tt()" title="Toggle theme">🌓</button>
+      <button class="p" onclick="openAuth('signin')">Sign In / Sign Up</button>
+    </div>
+  </header>
+  <main class="land">
+    <!-- HERO -->
+    <section class="hero2">
+      <div>
+        <span class="pill">✨ 100% free · Learn at your own pace</span>
+        <h1>Learn smarter with <span class="grad">LearnHub</span></h1>
+        <p class="lead">Lessons, quizzes, assignments, discussions and certificates — everything you need to learn and teach, in one friendly place.</p>
+        <div class="cta">
+          <button class="p xl" onclick="openAuth('signup')">🚀 Get started — it's free</button>
+          <button class="xl ghost" onclick="jump('courses')">📚 Browse courses</button>
+        </div>
+        <div class="trust">
+          <span>⭐ 4.8 / 5 learner rating</span>
+          <span>👩‍🎓 12,400+ learners</span>
+          <span>🏅 Free certificates</span>
+        </div>
+      </div>
+
+
+     <!--right side animation card-->
+
+      <div class="h-right">
+        <div class="blob"></div>
+        <div class="orb">🎓</div>
+        <div class="float-card c1"><b>📖 Lesson complete</b><span>+10 XP</span></div>
+        <div class="float-card c2"><b>🏆 Quiz Master</b><span>Badge unlocked</span></div>
+        <div class="float-card c3"><b>🔥 5-day streak</b><span>Keep it up!</span></div>
+      </div>
+    </section>
+
+    //number rang
+    <section class="strip">
+      <div><b>${cs.length}+</b><span>Courses</span></div>
+      <div><b>12,400+</b><span>Learners</span></div>
+      <div><b>98%</b><span>Completion rate</span></div>
+      <div><b>24/7</b><span>Always available</span></div>
+    </section>
+
+    //specilizasion
+    <section id="features" class="sec">
+      <h2>Everything you need to learn</h2>
+      <p class="sub">A complete learning system — not just videos.</p>
+      <div class="fgrid">${feats.map(([i, t, d]) => `<div class="fcard"><div class="fi">${i}</div><h3>${t}</h3><p>${d}</p></div>`).join('')}</div>
+    </section>
+
+    <!-- course card -->
+    <section id="courses" class="sec">
+      <h2>Popular courses</h2>
+      <p class="sub">Start with one of these — sign in to unlock every lesson.</p>
+      <div class="grid">${cs.slice(0, 6).map(c => `
+        <div class="card course" onclick="openAuth('signup')">
+          <div class="ico">${esc(c.icon)}</div>
+          <h3 style="margin:6px 0">${esc(c.title)}</h3>
+          <span class="tag">${esc(c.cat)}</span>
+          <p class="mut">${esc(c.desc || '')}</p>
+          <div class="mut">${c.lessons.length} lessons · ${c.quiz ? c.quiz.length : 0} quiz questions</div>
+        </div>`).join('')}</div>
+    </section>
+
+    <!-- කhow to work -->
+    <section id="how" class="sec">
+      <h2>How it works</h2>
+      <p class="sub">Get learning in three simple steps.</p>
+      <div class="steps">
+        <div class="step"><b>1</b><h3>Create your free account</h3><p class="mut">Sign up in seconds as a student or a teacher.</p></div>
+        <div class="step"><b>2</b><h3>Pick a course &amp; learn</h3><p class="mut">Read lessons, take notes, bookmark and discuss.</p></div>
+        <div class="step"><b>3</b><h3>Test yourself &amp; earn</h3><p class="mut">Pass the quiz, finish the lessons, print your certificate.</p></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="sec faq">
+      <h2>Frequently asked questions</h2>
+      <p class="sub">Still curious? Everything you need to know.</p>
+      ${faqs.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+    </section>
+
+    <!-- down scrool this -->
+    <section class="banner">
+      <h2>Ready to start learning?</h2>
+      <p>Join thousands of learners building new skills every day.</p>
+      <button class="p xl" onclick="openAuth('signup')">Create free account →</button>
+    </section>
+  </main>
+
+  <footer class="foot"><div class="foot-in">
+    <div>
+      <div class="logo">🎓 LearnHub</div>
+      <p style="margin:8px 0 0;max-width:290px">A friendly e-learning support system for students and teachers.</p>
+    </div>
+    <div>
+      <b>Explore</b>
+      <a onclick="jump('features')">Features</a>
+      <a onclick="jump('courses')">Courses</a>
+      <a onclick="jump('faq')">FAQ</a>
+    </div>
+    <div>
+      <b>Account</b>
+      <a onclick="openAuth('signin')">Sign in</a>
+      <a onclick="openAuth('signup')">Sign up</a>
+      <a onclick="demoLogin()">Demo login</a>
+    </div>
+  </div>
+  <p class="mut center" style="margin:24px 0 0">© ${new Date().getFullYear()} LearnHub · Demo project — your data stays in this browser.</p>
+  </footer>`;
+    }
+
+    // auth(sing in,sing up)
+    function authPage() {
+        const si = v.authMode !== 'signup';   // si = true == Sign In, false == Sign Up
+        return `
+  <header class="topbar">
+    <div class="logo" onclick="openLanding()">🎓 LearnHub</div>
+    <div class="pnav-r">
+      <button class="icon" onclick="tt()" title="Toggle theme">🌓</button>
+      <button onclick="openLanding()">← Back to home</button>
+    </div>
+  </header>
+  <main class="authwrap">
+    <div class="authcard">
+      <!--need list left coner -->
+      <div class="authart">
+        <h2>${si ? 'Welcome back 👋' : 'Join LearnHub 🎓'}</h2>
+        <p>${si ? 'Sign in to continue your learning journey.' : 'Create a free account and start learning today.'}</p>
+        <ul class="perks">
+          <li>✅ Free courses &amp; timed quizzes</li>
+          <li>✅ XP, badges &amp; daily streaks</li>
+          <li>✅ Certificates on completion</li>
+          <li>✅ Teacher tools for grading</li>
+        </ul>
+      </div>
+     <!-- right side form -->
+      <div class="authform">
+        <div class="tabs2">
+          <button class="${si ? 'on' : ''}" onclick="openAuth('signin')">Sign In</button>
+          <button class="${!si ? 'on' : ''}" onclick="openAuth('signup')">Sign Up</button>
+        </div>
+        ${v.err ? `<div class="err">⚠️ ${esc(v.err)}</div>` : ''}
+        ${!si ? `<label>Full name<input id="nm" placeholder="e.g. Nimal Perera" maxlength="40" value="${esc(v.f.n)}" oninput="v.f.n = this.value"></label>` : ''}
+        <label>Email<input id="em" type="email" placeholder="you@example.com" value="${esc(v.f.e)}" oninput="v.f.e = this.value"></label>
+        <label>Password<input id="pw" type="password" placeholder="••••••••" value="${esc(v.f.p)}" oninput="v.f.p = this.value"></label>
+        ${!si ? `<label>I am a<div class="row" style="margin-top:6px"><button type="button" class="chip ${role == 'student' ? 'on' : ''}" onclick="role='student';render()">🎒 Student</button><button type="button" class="chip ${role == 'teacher' ? 'on' : ''}" onclick="role='teacher';render()">🧑‍🏫 Teacher</button></div></label>` : ''}
+        <button class="p big w100" onclick="${si ? 'doSignin()' : 'doSignup()'}">${si ? 'Sign In →' : 'Create account →'}</button>
+        <button class="ghost w100" style="margin-top:8px" onclick="demoLogin()">⚡ Quick demo login (no account)</button>
+        <p class="mut center">${si ? `Don't have an account? <a onclick="openAuth('signup')">Sign up</a>` : `Already registered? <a onclick="openAuth('signin')">Sign in</a>`}</p>
+      </div>
+    </div>
+  </main>`;
+    }
+
+    // Loging SUCCESS PAGE
+    // nomal msg,not Dashboard
+    function successPage() {
+        return `
+  <header class="topbar">
+    <div class="logo">🎓 LearnHub</div>
+    <div class="pnav-r">
+      <button class="icon" onclick="tt()" title="Toggle theme">🌓</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </header>
+  <main class="authwrap">
+    <div class="success-box">
+      <div class="success-icon">✅</div>
+      <h1 class="success-title">Successfully Logged In!</h1>
+      <p class="success-msg">yes</p>
+      <div class="success-info">
+        <div class="info-row">
+          <span class="info-label">👤 Name</span>
+          <span class="info-value">${esc(S.user.name)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📧 Email</span>
+          <span class="info-value">${esc(S.user.email)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎭 Role</span>
+          <span class="info-value"><span class="tag">${esc(S.user.role)}</span></span>
+        </div>
+      </div>
+      <div class="success-actions">
+        <button class="p xl" onclick="logout()">Logout</button>
+        <button class="xl ghost" onclick="openLanding()">← Back to Home</button>
+      </div>
+    </div>
+  </main>`;
+    }
+
+    //  AUTH LOGIC
+    //  Error msg display next render this
+    function fail(m) { v.err = m; render(); }
+
+    // 👇 Sign Up (data search and creat new account)
+    function doSignup() {
+        const n = $('nm').value.trim(), e = $('em').value.trim(), p = $('pw').value;
+        v.f = { n, e, p };
+        if (!n) return fail('Please enter your full name.');
+        if (!/^\S+@\S+\.\S+$/.test(e)) return fail('Please enter a valid email address.');
+        if (p.length < 4) return fail('Password must be at least 4 characters long.');
+        if (S.users.some(u => u.e === e)) return fail('That email is already registered — try signing in.');
+        S.users.push({ n, e, p, role });
+        S.user = { name: n, email: e, role };
+        save(); v.err = ''; v.f = { n: '', e: '', p: '' }; v.p = 'success'; render();
+    }
+
+    // 👇 Sign In — email/password valid/unvalid and login
+    function doSignin() {
+        const e = $('em').value.trim(), p = $('pw').value;
+        v.f = { n: '', e, p };
+        if (!e) return fail('Please enter your email address.');
+        const u = S.users.find(x => x.e === e);
+        if (!u) return fail('No account found with that email. Please sign up first.');
+        if (u.p !== p) return fail('Incorrect password. Please try again.');
+        S.user = { name: u.n, email: u.e, role: u.role || 'student' };
+        save(); v.err = ''; v.f = { n: '', e: '', p: '' }; v.p = 'success'; render();
+    }
+
+    //  demo login
+    function demoLogin() {
+        S.user = { name: 'Demo Student', email: 'demo@learnhub.app', role: 'student' };
+        save(); v.err = ''; v.p = 'success'; render();
+    }
+
+    // 👇 Logout — user null  landing
+    function logout() { S.user = null; v.p = 'landing'; save(); render(); window.scrollTo({ top: 0 }); }
+
+    //  START
+    // open
+    render();
+</script>
+</body>
+</html>
