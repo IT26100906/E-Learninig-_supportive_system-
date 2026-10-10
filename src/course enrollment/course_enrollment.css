@@ -1,0 +1,165 @@
+
+/* COURSE ENROLLMENT PAGE
+   Theme colours, buttons, cards, topbar and footer come from ../main page/main.css.
+   This file only adds what the enrollment pages need on top of it. */
+
+/* native controls (date picker, select arrow) follow the dark theme */
+[data-theme="dark"] { color-scheme: dark; }
+
+/* FORM CONTROLS */
+
+select {
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--bdr);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    width: 100%;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+select:focus { border-color: var(--pri); }
+label select { margin-top: 5px; }
+
+.hint {
+    display: block;
+    color: var(--mut);
+    font-size: .8rem;
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+/* two inputs side by side */
+.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 14px;
+}
+
+/* TOPBAR — active page link */
+
+.pnav a.on { color: var(--pri); }
+a.logo:hover { text-decoration: none; }
+
+/* PAGE HEADER */
+
+.enr-head { padding: 24px 0 4px; }
+.enr-head h1 { font-size: 2.2rem; line-height: 1.2; }
+.enr-head .lead { margin-bottom: 0; max-width: 640px; }
+
+/* the enroll card reuses .authcard from the main page */
+.enr .authcard { margin: 0 auto; }
+.authart .perks li b { font-weight: 600; }
+
+/* MESSAGES */
+
+.ok {
+    background: rgba(22, 163, 74, .1);
+    color: var(--ok);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: .9rem;
+    margin-bottom: 14px;
+    border-left: 3px solid var(--ok);
+}
+
+/* VIEW ENROLLMENTS */
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.toolbar .search { flex: 1; min-width: 220px; max-width: 360px; }
+
+.tbl-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .93rem;
+}
+th, td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--bdr);
+    white-space: nowrap;
+}
+th {
+    color: var(--mut);
+    font-size: .78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--bg); }
+td.id { font-weight: 600; color: var(--pri); }
+td.act { text-align: right; }
+td.act button { padding: 5px 12px; font-size: .85rem; }
+
+.count { color: var(--mut); font-size: .85rem; margin: 14px 0 0; }
+
+/* status badge — same shape as .tag */
+.st {
+    display: inline-block;
+    font-size: .75rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 500;
+}
+.st.active    { background: rgba(79, 70, 229, .1); color: var(--pri); }
+.st.completed { background: rgba(22, 163, 74, .12); color: var(--ok); }
+
+.empty {
+    text-align: center;
+    color: var(--mut);
+    padding: 40px 16px;
+}
+.empty .ico { margin-bottom: 6px; }
+
+/* UPDATE / DROP */
+
+.manage {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 30px;
+}
+.manage h2 { margin-bottom: 4px; }
+.manage .success-info { margin: 18px 0; }
+
+.actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+button.danger { color: var(--bad); border-color: var(--bad); background: transparent; }
+button.danger:hover { background: var(--bad); color: #fff; border-color: var(--bad); }
+
+/* drop confirmation */
+.confirm {
+    background: rgba(220, 38, 38, .08);
+    border: 1px solid var(--bad);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 18px;
+}
+.confirm p { margin-bottom: 12px; }
+.confirm button.danger { background: var(--bad); color: #fff; }
+
+/* RESPONSIVE */
+
+@media (max-width: 600px) {
+    .enr-head h1 { font-size: 1.7rem; }
+    .two { grid-template-columns: 1fr; }
+    .manage { padding: 22px 18px; }
+    .toolbar .search { max-width: none; }
+    .pnav { gap: 14px; flex-wrap: wrap; }
+}

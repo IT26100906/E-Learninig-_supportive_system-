@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <title>Course Enrollment – LearnHub</title>
+
+    <!-- shared theme from the main page, then the styles for this page -->
+    <link rel="stylesheet" href="../main%20page/main.css">
+    <link rel="stylesheet" href="course_enrollment.css">
+
+</head>
+
+<body>
+<div id="root"></div>
+
+<script>
+
+    // Spring Boot backend (course-enrollment-backend)
+    const API = 'http://localhost:8080/api/enrollments';
+
+    // courses a student can be enrolled in (same ids as the main page)
+    const COURSES = [
+        { id: 'web', icon: '🌐', title: 'Web Development Basics' },
+        { id: 'math', icon: '➗', title: 'Mathematics Essentials' },
+        { id: 'eng', icon: '📝', title: 'English Communication' }
+    ];
+
+    const STATUSES = ['Active', 'Completed'];
+
+    const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+    let E = [];         // all enrollments, as loaded from the backend
+    let R = null;       // result of the Student ID search (null = no search)
+    let seq = 0;        // latest search request, so a slow old reply is ignored
+
+    // current screen
+    let v = {
+        p: 'enroll',        // enroll | view | manage
+        err: '',
+        ok: '',
+        q: '',              // student id search
+        st: 'All',          // status filter
+        sel: '',            // enrollment picked on the update / drop page
+        ns: '',             // new status picked for it
+        confirm: false,     // drop confirmation open
+        f: { id: '', sid: '', cid: '', date: today() }
+    };
+
+    const $ = id => document.getElementById(id);
+
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    const course = id => COURSES.find(c => c.id === id);
+    const courseName = id => { const c = course(id); return c ? `${c.icon} ${c.title}` : id; };
+
+    //  REST API
+    // one request to the backend; errors come back as { message }
+    async function api(path = '', method = 'GET', body) {
+        let r;
+        try {
+            r = await fetch(API + path, {
+                method,
+                headers: body ? { 'Content-Type': 'application/json' } : {},
+                body: body ? JSON.stringify(body) : undefined
+            });
+        } catch (e) {
+            throw new Error('Cannot reach the server. Make sure the backend is running on http://localhost:8080.');
+        }
+        const data = r.status === 204 ? null : await r.json().catch(() => null);
+        if (!r.ok) throw new Error((data && data.message) || `Request failed (${r.status}).`);
+        return data;
+    }
+
+    const searchPath = q => '?studentId=' + encodeURIComponent(q);
+
+    // reload everything from the backend
+    async function load() {
+        const q = v.q.trim();
+        seq++;
+        E = await api();
+        R = q ? await api(searchPath(q)) : null;
+    }
+
+    function go(p) { v.p = p; v.err = ''; v.ok = ''; v.confirm = false; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    //  Dark / Light theme change
+    function tt() {
+        const r = document.documentElement;
+        r.dataset.theme = (r.dataset.theme === 'dark' || (!r.dataset.theme && matchMedia('(prefers-color-scheme:dark)').matches)) ? 'light' : 'dark';
+    }
+
+    function fail(m) { v.err = m; v.ok = ''; render(); }
+
+    const msgs = () => (v.err ? `<div class="err">⚠️ ${esc(v.err)}</div>` : '') + (v.ok ? `<div class="ok">✅ ${esc(v.ok)}</div>` : '');
+
+    // main function
+    function render() {
+        const heads = {
+            enroll: ['Enroll a <span class="grad">student</span>', 'Add a student to a course. Every new enrollment starts as Active.'],
+            view: ['All <span class="grad">enrollments</span>', 'Browse every enrollment or search by Student ID.'],
+            manage: ['Update or <span class="grad">drop</span>', 'Change an enrollment\'s status, or cancel it completely.']
+        };
+        const [h, sub] = heads[v.p];
+        const nav = [['enroll', 'Enroll Student'], ['view', 'View Enrollments'], ['manage', 'Update / Drop']];
+
+        $('root').innerHTML = `
+  <header class="topbar">
+    <a class="logo" href="../main%20page/main.html">🎓 LearnHub</a>
+    <nav class="pnav">
+      ${nav.map(([p, t]) => `<a class="${v.p === p ? 'on' : ''}" onclick="go('${p}')">${t}</a>`).join('')}
+    </nav>
+    <div class="pnav-r">
+      <button class="icon" onclick="tt()" title="Toggle theme">🌓</button>
+      <button onclick="location.href='../main%20page/main.html'">← Back to home</button>
+    </div>
+  </header>
+  <main class="enr">
+    <section class="enr-head">
+      <span class="pill">🗂️ Course Enrollment</span>
+      <h1>${h}</h1>
+      <p class="lead">${sub}</p>
+    </section>
+
+    <section class="strip">
+      <div><b>${E.length}</b><span>Total enrollments</span></div>
+      <div><b>${E.filter(e => e.status === 'Active').length}</b><span>Active</span></div>
+      <div><b>${E.filter(e => e.status === 'Completed').length}</b><span>Completed</span></div>
+      <div><b>${new Set(E.map(e => e.studentId)).size}</b><span>Students</span></div>
+    </section>
+
+    ${v.p === 'enroll' ? enrollPage() : v.p === 'view' ? viewPage() : managePage()}
+  </main>
+
+  <footer class="foot">
+    <p class="mut center" style="margin:0">© ${new Date().getFullYear()} LearnHub · Demo project</p>
+  </footer>`;
+    }
+
+    // 1. ENROLL STUDENT FORM
+    function enrollPage() {
+        return `
+    <div class="authcard">
+      <div class="authart">
+        <h2>New enrollment 📝</h2>
+        <p>Fill in the form to register a student for a course.</p>
+        <ul class="perks">
+          <li>✅ <b>Enrollment ID</b> can be generated for you</li>
+          <li>✅ <b>Student ID</b> identifies the learner</li>
+          <li>✅ <b>Course ID</b> picks the course</li>
+          <li>✅ <b>Date</b> defaults to today</li>
+        </ul>
+      </div>
+      <div class="authform">
+        ${msgs()}
+        <div class="two">
+          <label>Enrollment ID<input id="eid" maxlength="12" placeholder="e.g. E001" value="${esc(v.f.id)}" oninput="v.f.id = this.value"><span class="hint">Leave blank to generate one</span></label>
+          <label>Student ID<input id="sid" maxlength="20" placeholder="e.g. S1001" value="${esc(v.f.sid)}" oninput="v.f.sid = this.value"></label>
+        </div>
+        <label>Course ID
+          <select id="cid" onchange="v.f.cid = this.value">
+            <option value="">Select a course…</option>
+            ${COURSES.map(c => `<option value="${c.id}" ${v.f.cid === c.id ? 'selected' : ''}>${c.id} — ${esc(c.title)}</option>`).join('')}
+          </select>
+        </label>
+        <label>Enrollment date<input id="dt" type="date" value="${esc(v.f.date)}" oninput="v.f.date = this.value"></label>
+        <button class="p big w100" onclick="doEnroll()">Enroll student →</button>
+        <button class="ghost w100" style="margin-top:8px" onclick="go('view')">📋 View all enrollments</button>
+      </div>
+    </div>`;
+    }
+
+    // 2. VIEW ENROLLMENTS PAGE
+    const matches = () => (R || E).filter(e => v.st === 'All' || e.status === v.st);
+
+    function rows() {
+        const list = matches();
+        if (!list.length) return `<tr><td colspan="6"><div class="empty"><div class="ico">🔍</div>${E.length ? 'No enrollments match your search.' : 'No enrollments yet — enroll the first student.'}</div></td></tr>`;
+        return list.map(e => `
+          <tr>
+            <td class="id">${esc(e.enrollmentId)}</td>
+            <td>${esc(e.studentId)}</td>
+            <td>${esc(courseName(e.courseId))}</td>
+            <td>${esc(e.enrollmentDate)}</td>
+            <td><span class="st ${esc(e.status.toLowerCase())}">${esc(e.status)}</span></td>
+            <td class="act"><button onclick="manage('${esc(e.enrollmentId)}')">Manage</button></td>
+          </tr>`).join('');
+    }
+
+    const countText = () => `Showing ${matches().length} of ${E.length} enrollments`;
+
+    // redraw only the table, so the search box keeps focus while typing
+    function drawRows() { if ($('tb')) { $('tb').innerHTML = rows(); $('cnt').textContent = countText(); } }
+
+    // search by Student ID on the backend
+    async function search() {
+        const q = v.q.trim(), n = ++seq;
+        try {
+            const r = q ? await api(searchPath(q)) : null;
+            if (n !== seq) return;
+            R = r;
+            drawRows();
+        } catch (e) {
+            if (n === seq) fail(e.message);
+        }
+    }
+
+    function viewPage() {
+        return `
+    <div class="card">
+      ${msgs()}
+      <div class="toolbar">
+        <input class="search" type="search" placeholder="🔍 Search by Student ID…" value="${esc(v.q)}" oninput="v.q = this.value; search()">
+        <div class="row">
+          ${['All', ...STATUSES].map(s => `<button class="chip ${v.st === s ? 'on' : ''}" onclick="v.st='${s}';render()">${s}</button>`).join('')}
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Enrollment ID</th><th>Student ID</th><th>Course</th><th>Date</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tb">${rows()}</tbody>
+        </table>
+      </div>
+      <p class="count" id="cnt">${countText()}</p>
+    </div>`;
+    }
+
+    // 3. UPDATE / DROP ENROLLMENT PAGE
+    function managePage() {
+        const e = E.find(x => x.enrollmentId === v.sel);
+        return `
+    <div class="card manage">
+      <h2>Manage enrollment</h2>
+      <p class="mut">Pick an enrollment to update its status or drop it.</p>
+      ${msgs()}
+      <label>Enrollment
+        <select onchange="pick(this.value)">
+          <option value="">Select an enrollment…</option>
+          ${E.map(x => `<option value="${esc(x.enrollmentId)}" ${x.enrollmentId === v.sel ? 'selected' : ''}>${esc(x.enrollmentId)} — ${esc(x.studentId)} · ${esc(x.courseId)}</option>`).join('')}
+        </select>
+      </label>
+      ${!e ? `<div class="empty"><div class="ico">🗂️</div>${E.length ? 'No enrollment selected.' : 'There are no enrollments to manage yet.'}</div>` : `
+      <div class="success-info">
+        <div class="info-row"><span class="info-label">🆔 Enrollment ID</span><span class="info-value">${esc(e.enrollmentId)}</span></div>
+        <div class="info-row"><span class="info-label">👤 Student ID</span><span class="info-value">${esc(e.studentId)}</span></div>
+        <div class="info-row"><span class="info-label">📚 Course</span><span class="info-value">${esc(courseName(e.courseId))}</span></div>
+        <div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${esc(e.enrollmentDate)}</span></div>
+        <div class="info-row"><span class="info-label">📌 Current status</span><span class="info-value"><span class="st ${esc(e.status.toLowerCase())}">${esc(e.status)}</span></span></div>
+      </div>
+      <label>Set status to
+        <div class="row" style="margin-top:6px">
+          ${STATUSES.map(s => `<button type="button" class="chip ${v.ns === s ? 'on' : ''}" onclick="v.ns='${s}';render()">${s}</button>`).join('')}
+        </div>
+      </label>
+      ${v.confirm ? `
+      <div class="confirm">
+        <p><b>Drop enrollment ${esc(e.enrollmentId)}?</b> This removes the record permanently and cannot be undone.</p>
+        <div class="row">
+          <button class="danger" onclick="doDrop()">Yes, drop it</button>
+          <button onclick="v.confirm=false;render()">Keep enrollment</button>
+        </div>
+      </div>` : `
+      <div class="actions">
+        <button class="p big" onclick="doUpdate()">Save status</button>
+        <button class="danger big" onclick="v.confirm=true;v.err='';v.ok='';render()">Drop enrollment</button>
+      </div>`}`}
+    </div>`;
+    }
+
+    //  ENROLLMENT LOGIC
+
+    // Create — POST /api/enrollments
+    async function doEnroll() {
+        const sid = v.f.sid.trim(), cid = v.f.cid, date = v.f.date;
+        if (!sid) return fail('Please enter the Student ID.');
+        if (!course(cid)) return fail('Please select a course.');
+        if (!date) return fail('Please choose the enrollment date.');
+        try {
+            const e = await api('', 'POST', { enrollmentId: v.f.id.trim(), studentId: sid, courseId: cid, enrollmentDate: date });
+            await load();
+            v.f = { id: '', sid: '', cid: '', date: today() };
+            v.err = ''; v.ok = `Enrollment ${e.enrollmentId} created — ${e.studentId} is now enrolled in ${course(cid).title}.`;
+            render();
+        } catch (e) { fail(e.message); }
+    }
+
+    // open the update / drop page for one enrollment
+    function pick(id) {
+        const e = E.find(x => x.enrollmentId === id);
+        v.sel = e ? e.enrollmentId : ''; v.ns = e ? e.status : ''; v.confirm = false; v.err = ''; v.ok = '';
+        render();
+    }
+    function manage(id) { v.p = 'manage'; pick(id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    // Update — PATCH /api/enrollments/{id}/status
+    async function doUpdate() {
+        const e = E.find(x => x.enrollmentId === v.sel);
+        if (!e) return fail('Please select an enrollment first.');
+        if (e.status === v.ns) return fail(`Enrollment ${e.enrollmentId} is already ${e.status}.`);
+        try {
+            const u = await api('/' + encodeURIComponent(e.enrollmentId) + '/status', 'PATCH', { status: v.ns });
+            await load();
+            v.err = ''; v.ok = `Enrollment ${u.enrollmentId} updated from ${e.status} to ${u.status}.`;
+            render();
+        } catch (err) { fail(err.message); }
+    }
+
+    // Delete — DELETE /api/enrollments/{id}
+    async function doDrop() {
+        const e = E.find(x => x.enrollmentId === v.sel);
+        if (!e) return fail('Please select an enrollment first.');
+        try {
+            await api('/' + encodeURIComponent(e.enrollmentId), 'DELETE');
+            await load();
+            v.sel = ''; v.ns = ''; v.confirm = false;
+            v.err = ''; v.ok = `Enrollment ${e.enrollmentId} was dropped.`;
+            render();
+        } catch (err) { v.confirm = false; fail(err.message); }
+    }
+
+    //  START
+    render();
+    load().then(render).catch(e => fail(e.message));
+</script>
+</body>
+</html>
