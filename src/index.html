@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Feedback System</title>
+    <!-- main.css ගොනුවට ලින්ක් කිරීම -->
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<!-- Header (සැමට පොදුයි) -->
+<header>
+    <div class="logo-area">
+        <span class="menu-icon">☰</span>
+        <span class="logo-text">🎓 LearnHub</span>
+    </div>
+    <div class="user-area">
+        <span id="user-display" style="margin-right: 15px; font-size: 14px; color: #555;"></span>
+        <button id="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<!-- 1. LOGIN VIEW (මුලින් පෙනෙන කොටස) -->
+<div id="login-view" class="view-section">
+    <div class="login-card">
+        <h2>Welcome Back</h2>
+        <p>Please select your role to continue</p>
+        <select id="role-select">
+            <option value="user">Student (User)</option>
+            <option value="admin">Administrator (Admin)</option>
+        </select>
+        <input type="text" id="username-input" placeholder="Enter your name/ID">
+        <button class="btn-primary" onclick="login()">Login</button>
+    </div>
+</div>
+
+<!-- 2. USER VIEW (ශිෂ්‍යයාට පමණක් පෙනෙන කොටස) -->
+<div id="user-view" class="view-section hidden">
+    <div class="header-title">
+        <h2>⭐ Course Feedback & Reviews</h2>
+        <p>Handled by Member 5 | Data file: feedback.txt</p>
+    </div>
+
+    <div class="card">
+        <h3>📝 Submit New Feedback</h3>
+        <form id="feedback-form" onsubmit="submitFeedback(event)">
+            <div class="form-group">
+                <label>Review ID (Auto Generated)</label>
+                <input type="text" id="reviewId" readonly placeholder="Auto">
+            </div>
+            <div class="form-group">
+                <label>Student ID</label>
+                <input type="text" id="studentId" placeholder="e.g., S12345" required>
+            </div>
+            <div class="form-group">
+                <label>Course Name / ID</label>
+                <input type="text" id="courseId" placeholder="e.g., Java Programming" required>
+            </div>
+            <div class="form-group">
+                <label>Rating (1-5)</label>
+                <select id="rating" required>
+                    <option value="">Select Rating</option>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Very Bad</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Comment</label>
+                <textarea id="comment" rows="3" placeholder="Write your review here..." required></textarea>
+            </div>
+            <button type="submit" class="btn-primary">Submit Review</button>
+        </form>
+    </div>
+</div>
+
+<!-- 3. ADMIN VIEW (පරිපාලකට පමණක් පෙනෙන කොටස) -->
+<div id="admin-view" class="view-section hidden">
+    <div class="header-title">
+        <h2>🛡️ Admin Dashboard</h2>
+        <p>Manage all student reviews here</p>
+    </div>
+
+    <div class="card">
+        <h3>📊 All Reviews (Read, Update, Delete)</h3>
+
+        <!-- Filter Option -->
+        <div class="filter-box">
+            <input type="text" id="filterCourse" placeholder="Filter by Course Name..." onkeyup="loadAdminData()">
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                <tr>
+                    <th>Rev ID</th>
+                    <th>Student ID</th>
+                    <th>Course</th>
+                    <th>Rating</th>
+                    <th>Comment</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="admin-table-body">
+                <!-- දත්ත මෙහි ලෝඩ් වේ -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // දත්ත ගබඩා කිරීම (LocalStorage)
+    let reviews = JSON.parse(localStorage.getItem('courseReviews')) || [];
+
+    // පිටුව Load වන විට
+    window.onload = function() {
+        checkLoginStatus();
+    };
+
+    // Login ක්‍රියාවලිය
+    function login() {
+        const role = document.getElementById('role-select').value;
+        const username = document.getElementById('username-input').value;
+
+        if (!username) {
+            alert("Please enter a username");
+            return;
+        }
+
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userName', username);
+        checkLoginStatus();
+    }
+
+    // Logout ක්‍රියාවලිය
+    function logout() {
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userName');
+        location.reload();
+    }
+
+    // ලොග් වී ඇත්දැයි පරීක්ෂා කර View මාරු කිරීම
+    function checkLoginStatus() {
+        const role = localStorage.getItem('userRole');
+        const name = localStorage.getItem('userName');
+
+        const loginView = document.getElementById('login-view');
+        const userView = document.getElementById('user-view');
+        const adminView = document.getElementById('admin-view');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userDisplay = document.getElementById('user-display');
+
+        if (role) {
+            // ලොග් වී ඇත්නම්
+            loginView.classList.add('hidden');
+            logoutBtn.style.display = 'block';
+            userDisplay.innerText = `Hi, ${name} (${role})`;
+
+            if (role === 'admin') {
+                // Admin කෙනෙක් නම් Admin View එක පෙන්වන්න
+                adminView.classList.remove('hidden');
+                userView.classList.add('hidden');
+                loadAdminData(); // දත්ත ලෝඩ් කරන්න
+            } else {
+                // User කෙනෙක් නම් User View එක පෙන්වන්න
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            }
+        } else {
+            // ලොග් වී නැත්නම්
+            loginView.classList.remove('hidden');
+            userView.classList.add('hidden');
+            adminView.classList.add('hidden');
+            logoutBtn.style.display = 'none';
+            userDisplay.innerText = '';
+        }
+    }
+
+    // --- USER ක්‍රියාකාරකම් ---
+
+    // අලුත් Review එකක් ඇතුලත් කිරීම (Create)
+    function submitFeedback(event) {
+        event.preventDefault();
+
+        const newReview = {
+            id: 'REV' + Math.floor(Math.random() * 10000), // අනන්‍ය ID එකක් සෑදීම
+            studentId: document.getElementById('studentId').value,
+            courseId: document.getElementById('courseId').value,
+            rating: document.getElementById('rating').value,
+            comment: document.getElementById('comment').value
+        };
+
+        reviews.push(newReview);
+        localStorage.setItem('courseReviews', JSON.stringify(reviews));
+
+        alert("✅ Review submitted successfully!");
+        document.getElementById('feedback-form').reset();
+    }
+
+    // --- ADMIN ක්‍රියාකාරකම් ---
+
+    // දත්ත පෙන්වීම (Read)
+    function loadAdminData() {
+        const tableBody = document.getElementById('admin-table-body');
+        const filterText = document.getElementById('filterCourse').value.toLowerCase();
+        tableBody.innerHTML = '';
+
+        // Filter කිරීම
+        const filteredReviews = reviews.filter(rev =>
+            rev.courseId.toLowerCase().includes(filterText)
+        );
+
+        if (filteredReviews.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #888;">No reviews found.</td></tr>';
+            return;
+        }
+
+        filteredReviews.forEach(rev => {
+            const row = `
+                    <tr>
+                        <td>${rev.id}</td>
+                        <td>${rev.studentId}</td>
+                        <td>${rev.courseId}</td>
+                        <td>${rev.rating} ⭐</td>
+                        <td>${rev.comment}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editReview('${rev.id}')">Edit</button>
+                            <button class="btn-delete" onclick="deleteReview('${rev.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    // දත්ත වෙනස් කිරීම (Update)
+    function editReview(id) {
+        const review = reviews.find(r => r.id === id);
+        if (!review) return;
+
+        // සරල Prompt එකක් මගින් දත්ත වෙනස් කිරීම
+        const newComment = prompt("Edit Comment:", review.comment);
+        const newRating = prompt("Edit Rating (1-5):", review.rating);
+
+        if (newComment !== null && newRating !== null) {
+            review.comment = newComment;
+            review.rating = newRating;
+
+            localStorage.setItem('courseReviews', JSON.stringify(reviews));
+            loadAdminData(); // Table එක refresh කරන්න
+            alert("✏️ Review updated!");
+        }
+    }
+
+    // දත්ත මකා දැමීම (Delete)
+    function deleteReview(id) {
+        if (confirm("Are you sure you want to delete this review?")) {
+            reviews = reviews.filter(r => r.id !== id);
+            localStorage.setItem('courseReviews', JSON.stringify(reviews));
+            loadAdminData(); // Table එක refresh කරන්න
+            alert("🗑️ Review deleted!");
+        }
+    }
+</script>
+</body>
+</html>
