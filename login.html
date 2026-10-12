@@ -1,0 +1,57 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnHub - Login</title>
+    <link rel="stylesheet" href="login.css">
+    <script src="login.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <div class="brand"><span>🎓</span> LearnHub</div>
+    <span class="top-label">Learning Portal</span>
+</header>
+
+<main class="login-wrapper">
+    <section class="login-card">
+        <div class="logo-circle">🎓</div>
+        <h1>Welcome to LearnHub</h1>
+        <p class="subtitle">Sign in to manage your assignments</p>
+
+        <form id="loginForm">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username"
+                       placeholder="Enter username"
+                       autocomplete="username" required>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password"
+                       placeholder="Enter password"
+                       autocomplete="current-password" required>
+            </div>
+
+            <p id="errorMessage" class="error" role="alert"></p>
+
+            <button type="submit" class="login-btn">
+                Login to LearnHub
+            </button>
+        </form>
+
+        <div class="demo-box">
+            <h3>Demo Login Details</h3>
+            <p><strong>Admin:</strong> admin / Admin@123</p>
+            <p><strong>User:</strong> student1 / User@123</p>
+            <p class="demo-note">For demonstration only</p>
+        </div>
+    </section>
+</main>
+
+<footer>© 2026 LearnHub</footer>
+</body>
+</html>
