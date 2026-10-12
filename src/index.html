@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnHub - Course Details</title>
+  <link rel="stylesheet" href="style.css">
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var urlRole = params.get("role");
+
+      if (urlRole === "admin" || urlRole === "user") {
+        localStorage.setItem("userRole", urlRole);
+      }
+
+      var role = localStorage.getItem("userRole");
+
+      if (role !== "admin" && role !== "user") {
+        window.location.replace("login.html");
+        return;
+      }
+
+      document.documentElement.classList.add(
+              role === "admin" ? "role-admin" : "role-student"
+      );
+
+      if (localStorage.getItem("learnhub_theme") === "dark") {
+        document.documentElement.classList.add("preload-dark");
+      }
+    })();
+  </script>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="topbar">
+  <div class="nav-left">
+    <button class="menu-btn" aria-label="Menu">☰</button>
+    <a href="index.html" class="brand">🎓 LearnHub</a>
+  </div>
+
+  <div class="nav-right">
+    <span class="role-badge" id="roleBadge">Admin</span>
+    <button class="theme-btn" id="themeBtn" title="Change theme">🌗</button>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="main-content">
+
+  <section class="page-heading">
+    <h1><span class="heading-icon">📚</span> Course Details</h1>
+    <p>
+      <span id="roleLabel">Admin</span> ·
+      <span id="courseCount">0</span> course(s) in
+      <span class="file-tag">courses.txt</span>
+    </p>
+  </section>
+
+  <!-- Search -->
+  <section class="toolbar">
+    <input type="text" id="searchInput"
+           placeholder="Search by ID, title or description...">
+
+    <button class="btn search-btn" id="searchBtn">🔍 Search</button>
+    <button class="btn clear-btn" id="clearBtn">Clear</button>
+
+    <button class="btn new-btn admin-only" id="newCourseBtn">＋ New Course</button>
+  </section>
+
+  <!-- Add / Edit Form — Admin only -->
+  <section class="form-card admin-only" id="courseFormSection" hidden>
+    <h2 id="formHeading">Add New Course</h2>
+
+    <form id="courseForm">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label for="courseId">Course ID</label>
+          <input type="text" id="courseId" placeholder="e.g. CRS003" required>
+        </div>
+
+        <div class="form-group">
+          <label for="credits">Credits</label>
+          <input type="number" id="credits" min="1" max="20"
+                 placeholder="e.g. 3" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="courseTitle">Course Title</label>
+          <input type="text" id="courseTitle"
+                 placeholder="Enter course title" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <textarea id="description"
+                    placeholder="Enter course description" required></textarea>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn search-btn" id="saveBtn">Save Course</button>
+        <button type="button" class="btn clear-btn" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Cards -->
+  <section class="course-grid" id="courseGrid"></section>
+
+  <p class="no-results" id="noResults" hidden>No courses found.</p>
+
+</main>
+
+<!-- ================= VIEW MODAL ================= -->
+<div class="modal-overlay" id="courseModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon">📚</div>
+        <div>
+          <h2 id="modalTitle">Course Title</h2>
+          <span class="modal-subtitle">Course Details</span>
+        </div>
+      </div>
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-row">
+        <span class="modal-label">Course ID</span>
+        <span class="modal-value modal-id" id="modalCourseId">—</span>
+      </div>
+
+      <div class="modal-row">
+        <span class="modal-label">Credits</span>
+        <span class="modal-value">
+          <span class="credit-badge modal-credits" id="modalCredits">—</span>
+        </span>
+      </div>
+
+      <div class="modal-row">
+        <span class="modal-label">Title</span>
+        <span class="modal-value" id="modalCourseTitle">—</span>
+      </div>
+
+      <div class="modal-row modal-row-block">
+        <span class="modal-label">Description</span>
+        <p class="modal-description" id="modalDescription">—</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn search-btn" id="modalOkBtn">OK</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= DELETE CONFIRM MODAL ================= -->
+<div class="modal-overlay" id="deleteModal" hidden>
+  <div class="confirm-box" role="dialog" aria-modal="true">
+    <div class="confirm-icon">🗑</div>
+    <h3>Delete this course?</h3>
+    <p>
+      Course <b id="deleteCourseId">—</b> will be permanently removed.
+      This action cannot be undone.
+    </p>
+    <div class="confirm-actions">
+      <button class="btn clear-btn" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* =========================================================
+     1. ROLE
+     ========================================================= */
+  const userRole = localStorage.getItem("userRole");
+  const isAdmin  = userRole === "admin";
+
+  document.body.classList.add(isAdmin ? "role-admin" : "role-student");
+
+  document.getElementById("roleBadge").textContent =
+          isAdmin ? "👑 Admin" : "👤 Student";
+  document.getElementById("roleLabel").textContent =
+          isAdmin ? "Admin" : "Student";
+
+  /* =========================================================
+     2. DATA (localStorage)
+     ========================================================= */
+  const STORAGE_KEY = "learnhub_courses";
+
+  const DEFAULT_COURSES = [
+    {
+      id: "CRS001",
+      title: "Information Technology",
+      description: "Learn about information technology",
+      credits: 3
+    },
+    {
+      id: "CRS002",
+      title: "Business Management",
+      description: "Introduction to business management",
+      credits: 4
+    }
+  ];
+
+  function loadCourses() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (err) {
+      console.warn("Course data corrupted — using defaults.");
+    }
+    return DEFAULT_COURSES.map(c => ({ ...c }));
+  }
+
+  let courses = loadCourses();
+
+  function saveCourses() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+  }
+
+  /* =========================================================
+     3. RENDER
+     ========================================================= */
+  const grid = document.getElementById("courseGrid");
+  const searchInput = document.getElementById("searchInput");
+
+  function createCard(course) {
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.dataset.id = course.id;
+    card.dataset.title = course.title;
+    card.dataset.description = course.description;
+    card.dataset.credits = course.credits;
+
+    card.innerHTML = `
+    <div class="card-top">
+      <div class="course-icon">📚</div>
+      <span class="credit-badge"></span>
+    </div>
+    <div class="course-id"></div>
+    <h2 class="course-title"></h2>
+    <p class="course-description"></p>
+    <div class="card-actions">
+      <button class="action-btn view-btn" data-action="view">⊙ View</button>
+      <button class="action-btn edit-btn admin-only" data-action="edit">✏ Edit</button>
+      <button class="action-btn delete-btn admin-only" data-action="delete">▤ Delete</button>
+    </div>`;
+
+    card.querySelector(".credit-badge").textContent = course.credits + " credits";
+    card.querySelector(".course-id").textContent = course.id;
+    card.querySelector(".course-title").textContent = course.title;
+    card.querySelector(".course-description").textContent = course.description;
+
+    return card;
+  }
+
+  function renderCourses() {
+    grid.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    courses.forEach(c => frag.appendChild(createCard(c)));
+    grid.appendChild(frag);
+    updateCount();
+    filterCourses();
+  }
+
+  function updateCount() {
+    document.getElementById("courseCount").textContent = courses.length;
+  }
+
+  /* =========================================================
+     4. SEARCH
+     ========================================================= */
+  function filterCourses() {
+    const q = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+
+    grid.querySelectorAll(".course-card").forEach(card => {
+      const text = (
+              card.dataset.id + " " +
+              card.dataset.title + " " +
+              card.dataset.description
+      ).toLowerCase();
+
+      const match = text.includes(q);
+      card.hidden = !match;
+      if (match) visible++;
+    });
+
+    document.getElementById("noResults").hidden = visible !== 0;
+  }
+
+  document.getElementById("searchBtn").addEventListener("click", filterCourses);
+  searchInput.addEventListener("input", filterCourses);
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    searchInput.value = "";
+    filterCourses();
+  });
+
+  /* =========================================================
+     5. VIEW MODAL
+     ========================================================= */
+  const courseModal = document.getElementById("courseModal");
+
+  function openCourseModal(card) {
+    document.getElementById("modalTitle").textContent       = card.dataset.title || "—";
+    document.getElementById("modalCourseId").textContent    = card.dataset.id || "—";
+    document.getElementById("modalCredits").textContent     = (card.dataset.credits || "—") + " credits";
+    document.getElementById("modalCourseTitle").textContent = card.dataset.title || "—";
+    document.getElementById("modalDescription").textContent = card.dataset.description || "—";
+
+    courseModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => courseModal.classList.add("show"));
+  }
+
+  function closeCourseModal() {
+    courseModal.classList.remove("show");
+    setTimeout(() => {
+      courseModal.hidden = true;
+      document.body.style.overflow = "";
+    }, 200);
+  }
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeCourseModal);
+  document.getElementById("modalOkBtn").addEventListener("click", closeCourseModal);
+  courseModal.addEventListener("click", e => {
+    if (e.target === courseModal) closeCourseModal();
+  });
+
+  /* =========================================================
+     6. DELETE CONFIRM MODAL
+     ========================================================= */
+  const deleteModal = document.getElementById("deleteModal");
+  let pendingDeleteId = null;
+
+  function askDelete(id) {
+    pendingDeleteId = id;
+    document.getElementById("deleteCourseId").textContent = id;
+
+    deleteModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => deleteModal.classList.add("show"));
+  }
+
+  function closeDeleteModal() {
+    deleteModal.classList.remove("show");
+    setTimeout(() => {
+      deleteModal.hidden = true;
+      document.body.style.overflow = "";
+    }, 200);
+    pendingDeleteId = null;
+  }
+
+  document.getElementById("confirmDeleteBtn").addEventListener("click", () => {
+    if (!pendingDeleteId) return;
+    courses = courses.filter(c => c.id !== pendingDeleteId);
+    saveCourses();
+    renderCourses();
+    closeDeleteModal();
+  });
+
+  document.getElementById("cancelDeleteBtn").addEventListener("click", closeDeleteModal);
+  deleteModal.addEventListener("click", e => {
+    if (e.target === deleteModal) closeDeleteModal();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (!courseModal.hidden) closeCourseModal();
+    if (!deleteModal.hidden)  closeDeleteModal();
+  });
+
+  /* =========================================================
+     7. ADD / EDIT FORM  (Admin only)
+     ========================================================= */
+  const formSection = document.getElementById("courseFormSection");
+  const form        = document.getElementById("courseForm");
+  const idField     = document.getElementById("courseId");
+
+  let editingId = null;
+
+  function openForm(course) {
+    form.reset();
+
+    if (course) {
+      editingId = course.id;
+      idField.value = course.id;
+      idField.disabled = true;
+      document.getElementById("credits").value     = course.credits;
+      document.getElementById("courseTitle").value = course.title;
+      document.getElementById("description").value = course.description;
+      document.getElementById("formHeading").textContent = "Edit Course Details";
+      document.getElementById("saveBtn").textContent     = "Update Course";
+    } else {
+      editingId = null;
+      idField.disabled = false;
+      document.getElementById("formHeading").textContent = "Add New Course";
+      document.getElementById("saveBtn").textContent     = "Save Course";
+    }
+
+    formSection.hidden = false;
+    formSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function closeForm() {
+    form.reset();
+    formSection.hidden = true;
+    editingId = null;
+    idField.disabled = false;
+  }
+
+  if (isAdmin) {
+    document.getElementById("newCourseBtn").addEventListener("click", () => openForm(null));
+    document.getElementById("cancelBtn").addEventListener("click", closeForm);
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+
+      const id          = idField.value.trim().toUpperCase();
+      const credits     = parseInt(document.getElementById("credits").value, 10);
+      const title       = document.getElementById("courseTitle").value.trim();
+      const description = document.getElementById("description").value.trim();
+
+      if (!id || !title || !description || !credits || credits < 1) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
+
+      const duplicate = courses.some(
+              c => c.id.toUpperCase() === id && c.id !== editingId
+      );
+
+      if (duplicate) {
+        alert("Course ID " + id + " already exists.");
+        return;
+      }
+
+      if (editingId) {
+        const c = courses.find(x => x.id === editingId);
+        c.id = id;
+        c.credits = credits;
+        c.title = title;
+        c.description = description;
+      } else {
+        courses.push({ id, credits, title, description });
+      }
+
+      saveCourses();
+      renderCourses();
+      closeForm();
+    });
+  }
+
+  /* =========================================================
+     8. CARD ACTIONS
+     ========================================================= */
+  grid.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+
+    const card   = btn.closest(".course-card");
+    const action = btn.dataset.action;
+
+    if (action === "view") {
+      openCourseModal(card);
+      return;
+    }
+
+    if (!isAdmin) return;
+
+    if (action === "edit") {
+      const course = courses.find(c => c.id === card.dataset.id);
+      if (course) openForm(course);
+    }
+
+    if (action === "delete") {
+      askDelete(card.dataset.id);
+    }
+  });
+
+  /* =========================================================
+     9. THEME + LOGOUT
+     ========================================================= */
+  const THEME_KEY = "learnhub_theme";
+
+  if (localStorage.getItem(THEME_KEY) === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+  document.documentElement.classList.remove("preload-dark");
+
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    localStorage.setItem(
+            THEME_KEY,
+            document.body.classList.contains("dark-mode") ? "dark" : "light"
+    );
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
+    window.location.href = "login.html";
+  });
+
+  /* =========================================================
+     10. START
+     ========================================================= */
+  renderCourses();
+</script>
+
+</body>
+</html>
