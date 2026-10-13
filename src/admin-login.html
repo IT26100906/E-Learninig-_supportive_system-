@@ -1,0 +1,49 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="admin-login.css">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="menu-icon">☰</div>
+    <div class="logo">🎓 Admin Login</div>
+    <a href="index.html" class="home-btn">Home</a>
+</header>
+
+<main class="login-container">
+    <div class="login-icon">🔐</div>
+
+    <h1>Admin Login</h1>
+    <p class="subtitle">Sign in to access the admin panel.</p>
+
+    <form onsubmit="return adminLogin(event)">
+        <label for="adminUsername">Admin Username or Email</label>
+        <input type="text" id="adminUsername"
+               placeholder="Enter admin username or email" required>
+
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword"
+               placeholder="Enter admin password" required>
+
+        <button type="submit">Admin Sign In</button>
+        <p id="message"></p>
+    </form>
+
+    <div class="divider"><span>ADMIN</span></div>
+
+    <p class="account-text">
+        Authorized administrators only.
+    </p>
+</main>
+
+<a href="index.html" class="back-link">Back to Home</a>
+
+<script src="auth.js"></script>
+</body>
+</html>

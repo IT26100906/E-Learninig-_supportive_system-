@@ -1,0 +1,105 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Assignment | LearnHub</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="auth.js" defer></script>
+</head>
+<body>
+<header class="navbar">
+    <div class="brand-area">
+        <div class="menu-wrap">
+            <button class="menu-button" onclick="toggleMenu()">☰</button>
+            <div class="menu-dropdown" id="menuDropdown">
+                <a href="index.html">Dashboard</a>
+                <a href="user-login.html">Assignments</a>
+            </div>
+        </div>
+        <a class="logo" href="index.html">LearnHub</a>
+    </div>
+    <div class="nav-actions">
+        <button class="theme-button" onclick="toggleTheme()">🌗</button>
+        <button class="logout-button" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<main class="container">
+    <div class="card">
+        <h1>Submit Assignment</h1>
+
+        <form id="submitForm">
+            <label>Student Name</label>
+            <input id="studentName" required>
+
+            <label>Assignment</label>
+            <select id="assignmentId" required></select>
+
+            <label>PDF or DOCX File</label>
+            <input id="file" type="file" accept=".pdf,.docx" required>
+
+            <button class="primary-button" type="submit">Submit</button>
+            <p id="message"></p>
+        </form>
+    </div>
+</main>
+
+<div class="bottom-navigation">
+    <a class="back-button" href="user-login.html">← Back to Dashboard</a>
+</div>
+
+<script>
+    const assignments = JSON.parse(localStorage.getItem("assignments") || "[]");
+    const select = document.getElementById("assignmentId");
+    const requestedId = new URLSearchParams(location.search).get("id");
+
+    assignments.forEach(a => {
+        const option = document.createElement("option");
+        option.value = a.id;
+        option.textContent = a.title;
+        option.selected = a.id === requestedId;
+        select.appendChild(option);
+    });
+
+    document.getElementById("submitForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const assignment = assignments.find(a => a.id === select.value);
+        const file = document.getElementById("file").files[0];
+
+        if (!assignment || !file) return;
+
+        if (assignment.deadline && new Date() > new Date(assignment.deadline)) {
+            document.getElementById("message").textContent = "Deadline has passed.";
+            return;
+        }
+
+        if (!/\.(pdf|docx)$/i.test(file.name)) {
+            document.getElementById("message").textContent = "Choose a PDF or DOCX file.";
+            return;
+        }
+
+        const submissions = JSON.parse(localStorage.getItem("submissions") || "[]");
+
+        submissions.push({
+            id: Date.now().toString(),
+            assignmentId: assignment.id,
+            assignmentTitle: assignment.title,
+            studentName: document.getElementById("studentName").value.trim(),
+            fileName: file.name,
+            submittedAt: new Date().toISOString()
+        });
+
+        localStorage.setItem("submissions", JSON.stringify(submissions));
+
+        document.getElementById("message").textContent =
+            "Submission details saved. Demo mode does not upload the actual file.";
+
+        this.reset();
+    });
+</script>
+</body>
+</html>

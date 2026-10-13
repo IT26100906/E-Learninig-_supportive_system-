@@ -1,0 +1,88 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="user-login.css">
+    <script src="auth.js" defer></script>
+    <script src="admin-panel.js" defer></script>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="brand-area">
+        <button class="menu-button" onclick="toggleMenu()">☰</button>
+        <a href="index.html" class="logo">🎓</a>
+        <span class="role-name">Admin Panel</span>
+    </div>
+
+    <div class="nav-actions">
+        <span class="logged-in-name" id="loggedInName">Admin</span>
+        <button class="theme-button" onclick="toggleTheme()">🌗</button>
+        <button class="logout-button" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="menu-dropdown" id="menuDropdown">
+        <a href="admin.html">Admin Home</a>
+        <a href="create.html">Create Assignment</a>
+        <a href="view.html">View Assignments</a>
+        <a href="index.html">Home</a>
+    </div>
+</header>
+
+<main class="admin-container">
+    <section class="admin-welcome">
+        <span class="tag">ADMINISTRATION</span>
+        <h1>Welcome, <span id="welcomeName">Admin</span>!</h1>
+        <p>Manage assignments, update details and review student submissions.</p>
+    </section>
+
+    <section class="admin-grid">
+        <a class="admin-card" href="create.html">
+            <div class="admin-card-icon">➕</div>
+            <h2>Create Assignment</h2>
+            <p>Post a new homework or assignment.</p>
+            <span>Open page →</span>
+        </a>
+
+        <a class="admin-card" href="view.html">
+            <div class="admin-card-icon">📋</div>
+            <h2>View Assignments</h2>
+            <p>View and search existing assignments.</p>
+            <span>Open page →</span>
+        </a>
+
+        <a class="admin-card" href="edit.html">
+            <div class="admin-card-icon">✏️</div>
+            <h2>Edit Assignments</h2>
+            <p>Update assignment details and marks.</p>
+            <span>Open page →</span>
+        </a>
+
+        <a class="admin-card" href="#submissions">
+            <div class="admin-card-icon">📁</div>
+            <h2>Submissions</h2>
+            <p>Manage student submission information.</p>
+            <span>View submissions ↓</span>
+        </a>
+    </section>
+
+    <section class="admin-info" id="submissions">
+        <h2>Assignment Management</h2>
+        <p>
+            Use the pages above to create, view and edit assignments.
+            Release student marks when they are ready.
+        </p>
+    </section>
+
+    <div class="bottom-navigation">
+        <a class="back-button" href="index.html">← Back to Dashboard</a>
+    </div>
+</main>
+
+</body>
+</html>

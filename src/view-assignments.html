@@ -1,92 +1,103 @@
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Assignments - LearnHub</title>
+    <title>View Assignments | LearnHub</title>
     <link rel="stylesheet" href="style.css">
+    <script src="auth.js"></script>
+    <script>requireAdmin();</script>
 </head>
 <body>
-
 <header class="navbar">
-    <div class="left">
-        <button class="menu-btn" type="button">☰</button>
-        <a href="view-assignments.html" class="logo">
-            🎓 <span>LearnHub</span>
-        </a>
+    <div class="brand-area">
+        <div class="menu-wrap">
+            <button class="menu-button" onclick="toggleMenu()">☰</button>
+            <div class="menu-dropdown" id="menuDropdown">
+                <a href="admin.html">Admin Dashboard</a>
+                <a href="create.html">Create Assignment</a>
+                <a href="view.html">View Assignments</a>
+            </div>
+        </div>
+        <a class="logo" href="admin.html">LearnHub</a>
     </div>
-    <div class="right">
-        <button class="theme-btn" type="button">🌗</button>
-        <button class="logout-btn" type="button">Logout</button>
+    <div class="nav-actions">
+        <button class="theme-button" onclick="toggleTheme()">🌗</button>
+        <button class="logout-button" onclick="logout()">Logout</button>
     </div>
 </header>
 
-<main class="container wide">
+<main class="container">
     <div class="card">
-        <div class="heading">
-            <div>
-                <h1>My Assignments</h1>
-                <p class="subtitle">View and manage all assignments.</p>
-            </div>
-            <a class="btn add-btn" href="create-assignment.html">
-                + Add Assignment
-            </a>
-        </div>
-
-        <form class="search" action="#" method="get">
-            <input type="text" name="assignmentId"
-                   placeholder="Search by Assignment ID">
-            <button type="submit" class="btn">Search</button>
-        </form>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                <tr>
-                    <th>Assignment ID</th>
-                    <th>Title</th>
-                    <th>Due Date</th>
-                    <th>Total Marks</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>A001</td>
-                    <td>Java Programming</td>
-                    <td>2026-10-25</td>
-                    <td>100</td>
-                    <td>
-                        <a href="edit-assignment.html"
-                           class="btn small">Edit</a>
-                        <button type="button"
-                                class="btn small delete-btn">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>A002</td>
-                    <td>Database Assignment</td>
-                    <td>2026-10-30</td>
-                    <td>50</td>
-                    <td>
-                        <a href="edit-assignment.html"
-                           class="btn small">Edit</a>
-                        <button type="button"
-                                class="btn small delete-btn">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+        <h1>View Homework</h1>
+        <input id="search" placeholder="Search by title or course ID" oninput="showAssignments()">
+        <div id="assignmentList"></div>
     </div>
 </main>
 
+<div class="bottom-navigation">
+    <a class="back-button" href="admin.html">← Back to Dashboard</a>
+</div>
+
+<script>
+    function showAssignments() {
+        const assignments = JSON.parse(localStorage.getItem("assignments") || "[]");
+        const query = document.getElementById("search").value.toLowerCase();
+        const list = document.getElementById("assignmentList");
+        list.replaceChildren();
+
+        const filtered = assignments.filter(a =>
+            (a.title || "").toLowerCase().includes(query) ||
+            (a.courseId || "").toLowerCase().includes(query)
+        );
+
+        if (!filtered.length) {
+            list.textContent = "No assignments found.";
+            return;
+        }
+
+        filtered.forEach(a => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const title = document.createElement("h3");
+            title.textContent = a.title;
+
+            const details = document.createElement("p");
+            details.textContent = "Homework ID: " + (a.homeworkId || a.id) +
+                " | Course ID: " + (a.courseId || "-");
+
+            const due = document.createElement("p");
+            due.textContent = "Due Date: " + (a.deadline || "-");
+
+            const edit = document.createElement("a");
+            edit.className = "primary-button";
+            edit.href = "edit.html?id=" + encodeURIComponent(a.id);
+            edit.textContent = "Edit";
+
+            const del = document.createElement("button");
+            del.className = "logout-button";
+            del.textContent = "Delete";
+            del.style.marginLeft = "8px";
+
+            del.onclick = () => {
+                if (confirm("Delete this assignment?")) {
+                    localStorage.setItem(
+                        "assignments",
+                        JSON.stringify(assignments.filter(item => item.id !== a.id))
+                    );
+                    showAssignments();
+                }
+            };
+
+            card.append(title, details, due, edit, del);
+            list.appendChild(card);
+        });
+    }
+
+    showAssignments();
+</script>
 </body>
 </html>

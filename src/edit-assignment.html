@@ -1,57 +1,122 @@
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Assignment - LearnHub</title>
+    <title>Edit Assignment | LearnHub</title>
     <link rel="stylesheet" href="style.css">
+    <script src="auth.js"></script>
+    <script>requireAdmin();</script>
 </head>
 <body>
-
 <header class="navbar">
-    <div class="left">
-        <button class="menu-btn" type="button">☰</button>
-        <a href="view-assignments.html" class="logo">
-            🎓 <span>LearnHub</span>
-        </a>
+    <div class="brand-area">
+        <div class="menu-wrap">
+            <button class="menu-button" onclick="toggleMenu()">☰</button>
+            <div class="menu-dropdown" id="menuDropdown">
+                <a href="admin.html">Admin Dashboard</a>
+                <a href="create.html">Create Assignment</a>
+                <a href="view.html">View Assignments</a>
+            </div>
+        </div>
+        <a class="logo" href="admin.html">LearnHub</a>
     </div>
-    <div class="right">
-        <button class="theme-btn" type="button">🌗</button>
-        <button class="logout-btn" type="button">Logout</button>
+    <div class="nav-actions">
+        <button class="theme-button" onclick="toggleTheme()">🌗</button>
+        <button class="logout-button" onclick="logout()">Logout</button>
     </div>
 </header>
 
 <main class="container">
     <div class="card">
-        <h1>Edit Assignment</h1>
-        <p class="subtitle">Update assignment details.</p>
+        <h1>Edit Homework</h1>
+        <p id="message"></p>
 
-        <form action="#" method="post">
-            <label for="id">Assignment ID</label>
-            <input type="text" id="id" name="assignmentId"
-                   value="A001" readonly>
+        <form id="editForm" hidden>
+            <label>Homework ID</label>
+            <input id="homeworkId" required>
 
-            <label for="title">Assignment Title</label>
-            <input type="text" id="title" name="title"
-                   value="Java Programming" required>
+            <label>Course ID</label>
+            <input id="courseId" required>
 
-            <label for="date">Due Date</label>
-            <input type="date" id="date" name="dueDate"
-                   value="2026-10-25" required>
+            <label>Title</label>
+            <input id="title" required>
 
-            <label for="marks">Total Marks</label>
-            <input type="number" id="marks" name="totalMarks"
-                   value="100" min="1" required>
+            <label>Description</label>
+            <textarea id="description" required></textarea>
 
-            <button class="btn" type="submit">Update Assignment</button>
+            <label>Due Date</label>
+            <input id="deadline" type="datetime-local" required>
+
+            <label>Total Marks</label>
+            <input id="totalMarks" type="number" min="1" required>
+
+            <label>Student Marks</label>
+            <input id="marks" type="number" min="0" required>
+
+            <label>
+                <input id="release" type="checkbox" style="width:auto">
+                Release marks to students
+            </label>
+
+            <br><br>
+            <button class="primary-button" type="submit">Save Changes</button>
         </form>
-
-        <a href="view-assignments.html" class="back-link">Cancel</a>
     </div>
 </main>
 
+<div class="bottom-navigation">
+    <a class="back-button" href="admin.html">← Back to Dashboard</a>
+</div>
+
+<script>
+    let assignments = JSON.parse(localStorage.getItem("assignments") || "[]");
+    const id = new URLSearchParams(location.search).get("id");
+    const assignment = assignments.find(a => a.id === id);
+
+    if (!assignment) {
+        document.getElementById("message").textContent = "Assignment not found.";
+    } else {
+        document.getElementById("editForm").hidden = false;
+
+        ["homeworkId", "courseId", "title", "description", "deadline", "totalMarks", "marks"].forEach(key => {
+            const field = document.getElementById(key);
+
+            if (key === "homeworkId") field.value = assignment.homeworkId || "";
+            else if (key === "courseId") field.value = assignment.courseId || "";
+            else field.value = assignment[key] ?? "";
+        });
+
+        document.getElementById("release").checked = Boolean(assignment.marksReleased);
+    }
+
+    document.getElementById("editForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const total = Number(document.getElementById("totalMarks").value);
+        const marks = Number(document.getElementById("marks").value);
+
+        if (marks < 0 || marks > total) {
+            document.getElementById("message").textContent =
+                "Marks must be between 0 and total marks.";
+            return;
+        }
+
+        assignment.homeworkId = document.getElementById("homeworkId").value.trim();
+        assignment.courseId = document.getElementById("courseId").value.trim();
+        assignment.title = document.getElementById("title").value.trim();
+        assignment.description = document.getElementById("description").value.trim();
+        assignment.deadline = document.getElementById("deadline").value;
+        assignment.totalMarks = total;
+        assignment.marks = marks;
+        assignment.marksReleased = document.getElementById("release").checked;
+
+        localStorage.setItem("assignments", JSON.stringify(assignments));
+        alert("Changes saved.");
+        location.href = "view.html";
+    });
+</script>
 </body>
 </html>

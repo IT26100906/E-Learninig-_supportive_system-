@@ -1,0 +1,60 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <link rel="stylesheet" href="user-login.css">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="menu-icon">☰</div>
+    <div class="logo">🎓 User Login</div>
+    <a href="index.html" class="home-btn">Home</a>
+</header>
+
+<main class="login-container">
+    <div class="login-icon">🎓</div>
+
+    <h1>User Login</h1>
+    <p class="subtitle">Sign in to continue learning with LearnHub.</p>
+
+    <form onsubmit="return userLogin(event)">
+        <label for="username">Username or Email</label>
+        <input
+                type="text"
+                id="username"
+                placeholder="Enter your username or email"
+                required
+        >
+
+        <label for="password">Password</label>
+        <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                required
+        >
+
+        <button type="submit">User Sign In</button>
+        <p id="message"></p>
+    </form>
+
+    <div class="divider"><span>OR</span></div>
+
+    <p class="account-text">
+        New to LearnHub?
+        <a href="#" onclick="showSignupMessage(); return false;">
+            Create an account
+        </a>
+    </p>
+</main>
+
+<a href="index.html" class="back-link">Back to Home</a>
+
+<script src="auth.js"></script>
+</body>
+</html>
